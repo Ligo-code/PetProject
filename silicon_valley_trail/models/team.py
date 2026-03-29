@@ -56,7 +56,14 @@ class TeamMember:
             return False
         return self.morale <= 20
 
+    @property
+    def has_left_permanently(self) -> bool:
+        """True if this member was poached and will never return."""
+        return not self.is_active and self.inactive_days_remaining == -1
+
     def apply_inactive_day(self) -> None:
+        if self.has_left_permanently:
+            return
         if self.inactive_days_remaining > 0:
             self.inactive_days_remaining -= 1
             if self.inactive_days_remaining == 0 and self.morale > 0:
