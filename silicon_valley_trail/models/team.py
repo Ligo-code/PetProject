@@ -22,22 +22,49 @@ class TeamMember:
     # FRONTEND (Hanna) — poached by design studios and FAANG
     # PRODUCT (Leo)    — poached when hype > 70, burns out when morale < 25
 
+    def can_be_poached(self, hype: int) -> bool:
+        if self.role == TeamRole.BACKEND:
+            return False
+        if self.role == TeamRole.FRONTEND:
+            return True
+        if self.role == TeamRole.PRODUCT:
+            return hype > 70
+        return False
+
+    def should_burnout(self) -> bool:
+        if self.role == TeamRole.BACKEND:
+            return False
+        if self.role == TeamRole.PRODUCT:
+            return self.morale <= 25
+        return self.morale <= 10
+
     def reduce_morale(self, amount: int) -> None:
         self.morale = max(0, self.morale - amount)
-        if self.morale == 0:
+        if self.should_burnout() and self.is_active:
             self.is_active = False
+            self.inactive_days_remaining = 2
 
     def restore_morale(self, amount: int) -> None:
         self.morale = min(100, self.morale + amount)
-        if self.morale > 0:
+        if self.morale > 0 and self.inactive_days_remaining == 0:
             self.is_active = True
 
     def is_burnout_risk(self) -> bool:
-        return self.morale <= 25
+        if self.role == TeamRole.PRODUCT:
+            return self.morale <= 30
+        if self.role == TeamRole.BACKEND:
+            return False
+        return self.morale <= 20
+
+    def apply_inactive_day(self) -> None:
+        if self.inactive_days_remaining > 0:
+            self.inactive_days_remaining -= 1
+            if self.inactive_days_remaining == 0 and self.morale > 0:
+                self.is_active = True
 
     def __str__(self) -> str:
         status = "" if self.is_active else " (on leave)"
-        return f"{self.name} [{self.role}]{status}"
+        return f"{self.name} [{self.role.value}]{status}"
 
 
 DEFAULT_TEAM: list[TeamMember] = [
