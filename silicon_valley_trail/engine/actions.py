@@ -13,6 +13,8 @@ Role bonuses applied here:
 from ..models.game_state import GameState
 from ..models.team import TeamRole
 
+fmt = GameState.format_deltas  # local shorthand
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
@@ -78,8 +80,8 @@ def rest(state: GameState) -> str:
     if state.has_role_active(TeamRole.PRODUCT):
         morale_gain += REST_PRODUCT_MORALE_BONUS
 
-    state.apply_effects(morale=morale_gain, coffee=-REST_COFFEE_COST)
-    return f"The team rests. +{morale_gain} morale, -{REST_COFFEE_COST} coffee."
+    deltas = state.apply_effects(morale=morale_gain, coffee=-REST_COFFEE_COST)
+    return f"The team rests. {fmt(deltas)}."
 
 
 def fix_bugs(state: GameState) -> str:
@@ -92,15 +94,12 @@ def fix_bugs(state: GameState) -> str:
         reduction *= FIX_BUGS_BOOSTED_MULTIPLIER
         state.next_fix_bugs_boosted = False
 
-    state.apply_effects(
+    deltas = state.apply_effects(
         bugs=-reduction,
         coffee=-FIX_BUGS_COFFEE_COST,
         morale=FIX_BUGS_MORALE_COST,
     )
-    return (
-        f"Bugs squashed: -{reduction}. "
-        f"Cost: -{FIX_BUGS_COFFEE_COST} coffee, {FIX_BUGS_MORALE_COST} morale."
-    )
+    return f"Bugs squashed. {fmt(deltas)}."
 
 
 def marketing_push(state: GameState) -> str:
@@ -144,13 +143,9 @@ def buy_supplies(state: GameState) -> str:
     if state.cash < SUPPLIES_CASH_COST:
         return f"Not enough cash. You need ${SUPPLIES_CASH_COST:,}."
 
-    state.apply_effects(
+    deltas = state.apply_effects(
         cash=-SUPPLIES_CASH_COST,
         coffee=SUPPLIES_COFFEE_GAIN,
         morale=SUPPLIES_MORALE_GAIN,
     )
-    return (
-        f"Supplies restocked. "
-        f"+{SUPPLIES_COFFEE_GAIN} coffee, +{SUPPLIES_MORALE_GAIN} morale. "
-        f"Cost: -${SUPPLIES_CASH_COST:,}."
-    )
+    return f"Supplies restocked. {GameState.format_deltas(deltas)}."

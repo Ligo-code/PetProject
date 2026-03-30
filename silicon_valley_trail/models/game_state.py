@@ -26,6 +26,7 @@ class GameState:
     won: bool = False
     hackathon_won: bool = False
     next_fix_bugs_boosted: bool = False
+    cloud_bill_fixed: bool = False  # server_bill event becomes unavailable after paying
 
     # API data (refreshed each turn)
     weather_description: str = "Unknown"
@@ -57,6 +58,8 @@ class GameState:
 
     # --- Resource effects ---
 
+    RESOURCE_FIELDS = ("cash", "morale", "coffee", "hype", "bugs")
+
     def apply_effects(
         self,
         cash: int = 0,
@@ -64,14 +67,34 @@ class GameState:
         coffee: int = 0,
         hype: int = 0,
         bugs: int = 0,
-    ) -> None:
-        """Single entry point for applying resource changes. Clamps after."""
+    ) -> dict[str, int]:
+        """
+        Apply resource changes, clamp, and return actual deltas.
+        Only resource fields are tracked — not flags or progress fields.
+        Zero-delta fields are included (caller decides whether to show them).
+        """
+        before = {f: getattr(self, f) for f in self.RESOURCE_FIELDS}
         self.cash += cash
         self.morale += morale
         self.coffee += coffee
         self.hype += hype
         self.bugs += bugs
         self._clamp_stats()
+        return {f: getattr(self, f) - before[f] for f in self.RESOURCE_FIELDS}
+
+    @staticmethod
+    def format_deltas(deltas: dict[str, int]) -> str:
+        """Return a human-readable string of non-zero resource changes."""
+        parts = []
+        for field, delta in deltas.items():
+            if delta == 0:
+                continue
+            sign = "+" if delta > 0 else ""
+            if field == "cash":
+                parts.append(f"{sign}${delta:,}")
+            else:
+                parts.append(f"{sign}{delta} {field}")
+        return ", ".join(parts) if parts else "no change"
 
     def apply_member_morale_change(self, role: TeamRole, amount: int) -> None:
         """Apply morale change to a specific team member by role."""

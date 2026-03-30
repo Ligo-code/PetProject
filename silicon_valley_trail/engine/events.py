@@ -16,6 +16,8 @@ from typing import Callable
 from ..models.game_state import GameState
 from ..models.team import TeamRole, BURNOUT_LEAVE_DAYS
 
+fmt = GameState.format_deltas  # local shorthand
+
 # Sentinel: member left the team permanently (poached, not coming back)
 PERMANENT_LEAVE = -1
 
@@ -129,8 +131,9 @@ def _angel_ignore(state: GameState) -> str:
 # ---------------------------------------------------------------------------
 
 def _server_pay(state: GameState) -> str:
-    state.apply_effects(cash=-2_000)
-    return "Ouch. Paid. Someone set up a billing alert this time. -$2,000."
+    deltas = state.apply_effects(cash=-2_000)
+    state.cloud_bill_fixed = True
+    return f"Ouch. Paid. The team finally cleaned up the cloud setup. {GameState.format_deltas(deltas)}."
 
 
 def _server_dispute(state: GameState) -> str:
@@ -380,6 +383,7 @@ class EventRegistry:
                 EventChoice("Dispute it (50/50: free or -$4,000 +5 bugs)", _server_dispute),
             ],
             weight=10,
+            condition=lambda s: not s.cloud_bill_fixed,
         ))
 
         self._register(Event(
