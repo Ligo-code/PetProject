@@ -8,6 +8,9 @@ class TeamRole(str, Enum):
     PRODUCT = "product"
 
 
+BURNOUT_LEAVE_DAYS = 2      # days a member is on leave after burnout
+
+
 @dataclass
 class TeamMember:
     name: str
@@ -42,7 +45,7 @@ class TeamMember:
         self.morale = max(0, self.morale - amount)
         if self.should_burnout() and self.is_active:
             self.is_active = False
-            self.inactive_days_remaining = 2
+            self.inactive_days_remaining = BURNOUT_LEAVE_DAYS
 
     def restore_morale(self, amount: int) -> None:
         self.morale = min(100, self.morale + amount)

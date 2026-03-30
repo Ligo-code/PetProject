@@ -128,7 +128,7 @@ def knowledge_share(state: GameState) -> str:
     Only available when PRODUCT member is active.
     """
     if not state.has_role_active(TeamRole.PRODUCT):
-        return "Leo isn't available right now. Knowledge share cancelled."
+        return "Leo is not available right now. Knowledge share cancelled."
 
     state.apply_effects(morale=KNOWLEDGE_SHARE_MORALE_RESTORE, coffee=-KNOWLEDGE_SHARE_COFFEE_COST)
     state.next_fix_bugs_boosted = True

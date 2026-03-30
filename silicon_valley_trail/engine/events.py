@@ -14,10 +14,8 @@ from dataclasses import dataclass, field
 from typing import Callable
 
 from ..models.game_state import GameState
-from ..models.team import TeamRole
+from ..models.team import TeamRole, BURNOUT_LEAVE_DAYS
 
-# Days a team member is on leave after burnout (temporary)
-BURNOUT_LEAVE_DAYS = 3
 # Sentinel: member left the team permanently (poached, not coming back)
 PERMANENT_LEAVE = -1
 
