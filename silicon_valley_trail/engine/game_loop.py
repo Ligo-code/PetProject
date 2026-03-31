@@ -27,6 +27,9 @@ OVERNIGHT_EVENT_CHANCE = 0.45   # 45% chance of an overnight event after rest
 
 registry = EventRegistry()
 
+# Always-available events used as fallback when location pool yields nothing
+FALLBACK_EVENT_KEYS = ["press_coverage", "recruiter_dm", "coffee_shortage"]
+
 
 # ---------------------------------------------------------------------------
 # Service injection (with fallback)
@@ -223,8 +226,10 @@ def run_game(state: GameState, save_callback, quit_callback) -> None:
                 continue
             msg = travel(state)
             print(f"\n{msg}")
-            # Trigger a location event after arriving
+            # Trigger a location event after arriving — fallback ensures one always fires
             event = registry.pick_from_pool(state.current_location.event_pool, state)
+            if not event:
+                event = registry.pick_from_pool(FALLBACK_EVENT_KEYS, state)
             if event:
                 _resolve_event(state, event)
 
