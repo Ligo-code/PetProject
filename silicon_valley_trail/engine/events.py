@@ -36,13 +36,18 @@ def _poachable_member(state: GameState):
 # ---------------------------------------------------------------------------
 
 def _vc_pitch_accept(state: GameState) -> str:
-    state.apply_effects(cash=-2_000, coffee=-10)
+    entry_deltas = state.apply_effects(cash=-2_000, coffee=-10)
+    if state.hype < 40:
+        fail_deltas = state.apply_effects(morale=-10)
+        return (
+            f"The pitch fell flat. They weren't impressed. "
+            f"Entry cost: {fmt(entry_deltas)}. {fmt(fail_deltas)}."
+        )
     if state.hype >= 60:
-        state.apply_effects(cash=10_000, hype=15)
-        return "Great pitch! They want to set up a follow-up. +$10,000 cash, +15 hype."
-    else:
-        state.apply_effects(cash=3_000, hype=5)
-        return "Decent interest. They'll think about it. +$3,000 cash."
+        win_deltas = state.apply_effects(cash=10_000, hype=15)
+        return f"Great pitch! They want a follow-up. {fmt(win_deltas)}. Entry cost: {fmt(entry_deltas)}."
+    ok_deltas = state.apply_effects(cash=3_000, hype=5)
+    return f"Decent interest. They'll think about it. {fmt(ok_deltas)}. Entry cost: {fmt(entry_deltas)}."
 
 
 def _vc_pitch_decline(state: GameState) -> str:
@@ -58,19 +63,19 @@ HACKATHON_WIN_CHANCE_WITH_PRODUCT = 0.75  # Leo significantly improves odds
 
 
 def _hackathon_enter(state: GameState) -> str:
-    state.apply_effects(coffee=-15, morale=-10)
+    entry_deltas = state.apply_effects(coffee=-15, morale=-10)
     win_chance = (
         HACKATHON_WIN_CHANCE_WITH_PRODUCT
         if state.has_role_active(TeamRole.PRODUCT) and state.morale >= 50
         else HACKATHON_WIN_CHANCE_BASE
     )
     if random.random() < win_chance:
-        state.apply_effects(cash=5_000, hype=30)
+        win_deltas = state.apply_effects(cash=5_000, hype=30)
         state.hackathon_won = True
-        return "You won the hackathon! +$5,000, +30 hype. The team is exhausted but proud."
+        return f"You won the hackathon! {fmt(win_deltas)}. Entry cost: {fmt(entry_deltas)}."
     else:
-        state.apply_effects(hype=10, bugs=3)
-        return "You didn't place. Rushed code left some bugs behind. +10 hype, +3 bugs."
+        fail_deltas = state.apply_effects(hype=10, bugs=3)
+        return f"You didn't place. Rushed code left bugs behind. {fmt(fail_deltas)}. Entry cost: {fmt(entry_deltas)}."
 
 
 def _hackathon_skip(state: GameState) -> str:
@@ -193,6 +198,26 @@ def _burnout_push_through(state: GameState) -> str:
 # ---------------------------------------------------------------------------
 # Effect functions — coffee_shortage
 # ---------------------------------------------------------------------------
+
+def _conflict_side_kay(state: GameState) -> str:
+    """Side with Kay (backend) — fewer bugs but Leo's morale drops."""
+    deltas = state.apply_effects(bugs=-4, morale=-5)
+    state.apply_member_morale_change(TeamRole.PRODUCT, -15)
+    return f"You back Kay's approach. Cleaner code, but Leo feels overruled. {fmt(deltas)}, Leo -15 morale."
+
+
+def _conflict_side_leo(state: GameState) -> str:
+    """Side with Leo (product) — hype boost but technical risk."""
+    deltas = state.apply_effects(hype=15, bugs=4)
+    state.apply_member_morale_change(TeamRole.BACKEND, -10)
+    return f"You back Leo's vision. Bold move, but risky. {fmt(deltas)}, Kay -10 morale."
+
+
+def _conflict_mediate(state: GameState) -> str:
+    """Try to find middle ground — costs time and morale."""
+    deltas = state.apply_effects(morale=-10, cash=-500)
+    return f"You mediate for hours. No one's happy, but you move forward. {fmt(deltas)}."
+
 
 def _coffee_buy_machine(state: GameState) -> str:
     state.apply_effects(cash=-500)
@@ -396,6 +421,19 @@ class EventRegistry:
             ],
             weight=6,
             condition=lambda s: any(m.is_burnout_risk() for m in s.active_team),
+        ))
+
+        self._register(Event(
+            key="team_conflict",
+            title="Architecture Debate",
+            description="Kay and Leo are at each other's throats over a technical decision. The whole team is watching.",
+            choices=[
+                EventChoice("Side with Kay — stability over speed (-4 bugs, -5 morale, Leo -15)", _conflict_side_kay),
+                EventChoice("Side with Leo — ship fast, fix later (+15 hype, +4 bugs, Kay -10)", _conflict_side_leo),
+                EventChoice("Mediate — find middle ground (-10 morale, -$500)", _conflict_mediate),
+            ],
+            weight=6,
+            condition=lambda s: s.has_role_active(TeamRole.BACKEND) and s.has_role_active(TeamRole.PRODUCT),
         ))
 
         self._register(Event(

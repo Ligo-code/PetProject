@@ -23,7 +23,7 @@ from ..engine.actions import (
 )
 from ..engine.events import EventRegistry
 
-OVERNIGHT_EVENT_CHANCE = 0.25   # 25% chance of an overnight event after rest
+OVERNIGHT_EVENT_CHANCE = 0.45   # 45% chance of an overnight event after rest
 
 registry = EventRegistry()
 
@@ -259,6 +259,7 @@ def run_game(state: GameState, save_callback, quit_callback) -> None:
 
         # End of turn
         state.tick_day()
+        print(f"\nDaily upkeep: -{state.DAILY_COFFEE_DRAIN} coffee.")
         state.check_game_status()
         _press_enter()
 

@@ -124,6 +124,7 @@ class GameState:
 
     DAILY_COFFEE_DRAIN = 1      # passive coffee consumption per day
     BUG_GROWTH_INTERVAL = 3    # bugs grow by 1 every N days if not fixed
+    LOW_COFFEE_THRESHOLD = 15  # below this, team morale starts to slip
 
     def tick_day(self) -> None:
         """Advance one day. Call AFTER showing the player any messages."""
@@ -140,6 +141,10 @@ class GameState:
         # Passive bug growth every N days
         if self.day % self.BUG_GROWTH_INTERVAL == 0:
             self.bugs += 1
+
+        # Low coffee drains morale — team is running on fumes
+        if self.coffee < self.LOW_COFFEE_THRESHOLD:
+            self.morale = max(0, self.morale - 1)
 
         self._tick_inactive_members()
 

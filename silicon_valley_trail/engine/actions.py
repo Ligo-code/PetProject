@@ -66,11 +66,11 @@ def travel(state: GameState) -> str:
         state.apply_effects(bugs=TRAVEL_HEAT_BUG_PENALTY)
         messages.append("Heat wave — everyone is distracted.")
 
-    state.apply_effects(coffee=-coffee_cost)
+    deltas = state.apply_effects(coffee=-coffee_cost)
     state.advance_location()
 
     location = state.current_location
-    messages.insert(0, f"Arrived at {location.name}!")
+    messages.insert(0, f"Arrived at {location.name}! ({fmt(deltas)})")
     return "\n".join(messages)
 
 

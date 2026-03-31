@@ -21,19 +21,19 @@ LOCATIONS: list[Location] = [
         name="Santa Clara",
         description="Home of tech giants",
         lat=37.3541, lon=-121.9552,
-        event_pool=["vc_pitch", "server_bill", "hackathon", "recruiter_dm"],
+        event_pool=["vc_pitch", "server_bill", "hackathon", "recruiter_dm", "team_conflict"],
     ),
     Location(
         name="Sunnyvale",
         description="Where ideas become products",
         lat=37.3688, lon=-122.0363,
-        event_pool=["press_coverage", "tech_debt_crisis", "coffee_shortage"],
+        event_pool=["press_coverage", "tech_debt_crisis", "coffee_shortage", "team_conflict"],
     ),
     Location(
         name="Mountain View",
         description="Googleplex territory — recruiters everywhere",
         lat=37.3861, lon=-122.0839,
-        event_pool=["recruiter_dm", "key_dev_poached", "hackathon", "angel_investor"],
+        event_pool=["recruiter_dm", "key_dev_poached", "hackathon", "angel_investor", "team_conflict"],
     ),
     Location(
         name="Palo Alto",
