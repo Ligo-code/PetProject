@@ -122,13 +122,25 @@ class GameState:
 
     # --- Turn lifecycle ---
 
+    DAILY_COFFEE_DRAIN = 2      # passive coffee consumption per day
+    BUG_GROWTH_INTERVAL = 3    # bugs grow by 1 every N days if not fixed
+
     def tick_day(self) -> None:
         """Advance one day. Call AFTER showing the player any messages."""
         self.day += 1
+
+        # Passive coffee drain
+        self.coffee = max(0, self.coffee - self.DAILY_COFFEE_DRAIN)
+
         if self.coffee == 0:
             self.days_without_coffee += 1
         else:
             self.days_without_coffee = 0
+
+        # Passive bug growth every N days
+        if self.day % self.BUG_GROWTH_INTERVAL == 0:
+            self.bugs += 1
+
         self._tick_inactive_members()
 
     def _tick_inactive_members(self) -> None:

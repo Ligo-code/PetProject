@@ -53,15 +53,24 @@ def _vc_pitch_decline(state: GameState) -> str:
 # Effect functions — hackathon
 # ---------------------------------------------------------------------------
 
+HACKATHON_WIN_CHANCE_BASE = 0.45
+HACKATHON_WIN_CHANCE_WITH_PRODUCT = 0.75  # Leo significantly improves odds
+
+
 def _hackathon_enter(state: GameState) -> str:
     state.apply_effects(coffee=-15, morale=-10)
-    if state.has_role_active(TeamRole.PRODUCT) and state.morale >= 50:
+    win_chance = (
+        HACKATHON_WIN_CHANCE_WITH_PRODUCT
+        if state.has_role_active(TeamRole.PRODUCT) and state.morale >= 50
+        else HACKATHON_WIN_CHANCE_BASE
+    )
+    if random.random() < win_chance:
         state.apply_effects(cash=5_000, hype=30)
         state.hackathon_won = True
         return "You won the hackathon! +$5,000, +30 hype. The team is exhausted but proud."
     else:
-        state.apply_effects(hype=10)
-        return "Good effort — you didn't place, but made some connections. +10 hype."
+        state.apply_effects(hype=10, bugs=3)
+        return "You didn't place. Rushed code left some bugs behind. +10 hype, +3 bugs."
 
 
 def _hackathon_skip(state: GameState) -> str:
