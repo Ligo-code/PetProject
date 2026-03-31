@@ -347,7 +347,11 @@ class EventRegistry:
             title="Local Hackathon!",
             description="A 48-hour hackathon is happening this weekend.",
             choices=[
-                EventChoice("Enter the hackathon (-15 coffee, -10 morale)", _hackathon_enter),
+                EventChoice(
+                    "Enter the hackathon (-15 coffee, -10 morale)",
+                    _hackathon_enter,
+                    condition=lambda s: s.coffee >= 15,
+                ),
                 EventChoice("Skip it, focus on the journey", _hackathon_skip),
             ],
             weight=5,
