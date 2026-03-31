@@ -116,6 +116,8 @@ def _display_status(state: GameState) -> None:
         print("WARNING: Day 2 without coffee means game over!")
     elif state.coffee == 0:
         print("WARNING: No coffee left!")
+    if state.next_fix_bugs_boosted:
+        print("Bug fix boost: ACTIVE (next fix will be 2x effective)")
     print(f"Team: {active_names}")
     print("-" * 60)
 
