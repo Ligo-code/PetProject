@@ -112,6 +112,10 @@ def _display_status(state: GameState) -> None:
     print(f"Weather: {state.weather_description}")
     if state.hn_trending_keyword:
         print(f"HN Trending: \"{state.hn_trending_keyword}\"  ->  +hype opportunity")
+    if state.coffee == 0 and state.days_without_coffee == 1:
+        print("WARNING: Day 2 without coffee means game over!")
+    elif state.coffee == 0:
+        print("WARNING: No coffee left!")
     print(f"Team: {active_names}")
     print("-" * 60)
 

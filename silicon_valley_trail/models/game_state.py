@@ -122,7 +122,7 @@ class GameState:
 
     # --- Turn lifecycle ---
 
-    DAILY_COFFEE_DRAIN = 2      # passive coffee consumption per day
+    DAILY_COFFEE_DRAIN = 1      # passive coffee consumption per day
     BUG_GROWTH_INTERVAL = 3    # bugs grow by 1 every N days if not fixed
 
     def tick_day(self) -> None:
@@ -150,26 +150,29 @@ class GameState:
     # --- Win / Lose ---
 
     def check_lose_condition(self) -> bool:
-        """Check lose conditions. Sets game_over and lose_reason if triggered."""
-        if self.cash <= 0:
+        """Check lose conditions. Sets game_over and lose_reason if triggered.
+
+        Order reflects priority: most concrete/final cause first.
+        """
+        if not self.active_team:
             self.game_over = True
-            self.lose_reason = "You ran out of cash. The startup is dead."
+            self.lose_reason = "No one is left to keep the startup alive."
+            return True
+        if self.days_without_coffee >= 2:
+            self.game_over = True
+            self.lose_reason = "Two days without coffee. The team could not keep going."
             return True
         if self.morale <= 0:
             self.game_over = True
             self.lose_reason = "Team morale collapsed. Everyone quit."
             return True
+        if self.cash <= 0:
+            self.game_over = True
+            self.lose_reason = "You ran out of cash. The startup shut down."
+            return True
         if self.bugs >= 20:
             self.game_over = True
-            self.lose_reason = "The codebase is unrecoverable. 20 bugs. Investors ran."
-            return True
-        if self.days_without_coffee >= 2:
-            self.game_over = True
-            self.lose_reason = "Two days without coffee. The team cannot function."
-            return True
-        if not self.active_team:
-            self.game_over = True
-            self.lose_reason = "No one is left to keep the startup running."
+            self.lose_reason = f"The codebase became unrecoverable ({self.bugs} bugs). Investors lost confidence."
             return True
         return False
 
@@ -184,7 +187,7 @@ class GameState:
         return False
 
     def check_game_status(self) -> None:
-        """Single call for engine: checks lose first, then win."""
-        if self.check_lose_condition():
+        """Win takes priority: if player reached SF, it's a win even on a bad day."""
+        if self.check_win_condition():
             return
-        self.check_win_condition()
+        self.check_lose_condition()
