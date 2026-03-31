@@ -11,10 +11,9 @@ import pytest
 
 from silicon_valley_trail.models.game_state import GameState
 from silicon_valley_trail.models.team import TeamRole
+from silicon_valley_trail.models.event import Event, EventChoice
 from silicon_valley_trail.engine.events import (
     EventRegistry,
-    EventChoice,
-    Event,
     PERMANENT_LEAVE,
     _vc_pitch_accept,
     _vc_pitch_decline,

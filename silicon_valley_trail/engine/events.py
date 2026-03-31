@@ -10,47 +10,15 @@ Effect functions take GameState, mutate it in place, return a message string.
 """
 
 import random
-from dataclasses import dataclass, field
-from typing import Callable
 
 from ..models.game_state import GameState
 from ..models.team import TeamRole, BURNOUT_LEAVE_DAYS
+from ..models.event import Event, EventChoice
 
 fmt = GameState.format_deltas  # local shorthand
 
 # Sentinel: member left the team permanently (poached, not coming back)
 PERMANENT_LEAVE = -1
-
-
-# ---------------------------------------------------------------------------
-# Data model
-# ---------------------------------------------------------------------------
-
-@dataclass
-class EventChoice:
-    text: str
-    effect: Callable[[GameState], str]
-    condition: Callable[[GameState], bool] = field(default_factory=lambda: lambda _: True)
-
-
-@dataclass
-class Event:
-    key: str
-    title: str
-    description: str
-    choices: list[EventChoice]          # empty = automatic (no player input)
-    weight: int = 10                    # higher = more common in weighted draw
-    condition: Callable[[GameState], bool] = field(default_factory=lambda: lambda _: True)
-    is_overnight: bool = False          # triggered after "rest" action
-    auto_effect: Callable[[GameState], str] | None = None  # used when choices is empty
-
-    def available_choices(self, state: GameState) -> list[EventChoice]:
-        """Return only choices whose condition is met in the current state."""
-        return [c for c in self.choices if c.condition(state)]
-
-    @property
-    def is_automatic(self) -> bool:
-        return not self.choices and self.auto_effect is not None
 
 
 # ---------------------------------------------------------------------------
