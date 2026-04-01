@@ -41,7 +41,19 @@ _MOCK_WEATHER = WeatherData(
 
 
 def _parse_weather_code(code: int) -> tuple[str, bool]:
-    """Return (description, is_rainy) for a WMO weather code."""
+    """
+    Translate a WMO weather code (returned by Open-Meteo API) into a
+    human-readable description and an is_rainy flag.
+
+    WMO code ranges:
+      0        — Clear sky
+      1–3      — Partly cloudy
+      45–48    — Fog
+      51–67    — Drizzle / Rain      → is_rainy = True
+      71–77    — Snow                → is_rainy = True (treated as rain for gameplay)
+      80–82    — Showers             → is_rainy = True
+      95–99    — Thunderstorm        → is_rainy = True
+    """
     if code == 0:
         return "Clear sky", False
     if code <= 3:
