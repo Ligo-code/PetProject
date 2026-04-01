@@ -181,12 +181,6 @@ Python was chosen for fast iteration, readability, and ease of modeling game sta
 
 ---
 
-## How AI Was Used
-
-Claude (Anthropic) was used as a collaborative tool throughout — for architectural feedback, code review, and design tradeoff discussions. All decisions, implementations, and balancing were made and reviewed by me. Game design and scenarios draw from personal experience.
-
----
-
 ## If I Had More Time
 
 - OpenSky Network API — aircraft-triggered supply drops based on real flight data near current coordinates
