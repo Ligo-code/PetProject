@@ -4,7 +4,7 @@ A replayable CLI resource-management simulation inspired by *The Oregon Trail*. 
 
 Designed to feel like a series of small, stressful decisions — similar to real startup life. The core idea: **every decision has a cost**. Solving one problem creates pressure elsewhere. There is no safe path — only better and worse trade-offs.
 
-# Live Demo 
+## Live Demo 
 https://silicon-valley-trail-m2d5.onrender.com/docs 
 
 ![alt text](assets/image.png)
