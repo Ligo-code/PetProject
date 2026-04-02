@@ -1,15 +1,6 @@
 """
 Weather service using Open-Meteo API.
 No API key required.
-
-WMO weather code groups:
-  0        — Clear sky
-  1–3      — Partly cloudy
-  45–48    — Fog
-  51–67    — Drizzle / Rain
-  71–77    — Snow
-  80–82    — Showers
-  95–99    — Thunderstorm
 """
 
 import os

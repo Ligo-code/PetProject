@@ -5,9 +5,17 @@ Run with:
     python cli.py
 """
 
+from enum import IntEnum
+
 from silicon_valley_trail.models.game_state import GameState
 from silicon_valley_trail.engine.game_loop import run_game
 from silicon_valley_trail.storage import save_game, load_game, delete_save
+
+
+class MenuOption(IntEnum):
+    NEW_GAME  = 1
+    LOAD_GAME = 2
+    QUIT      = 3
 
 
 # ---------------------------------------------------------------------------
@@ -77,9 +85,9 @@ def _main_menu() -> None:
         print("  2. Load Game")
         print("  3. Quit")
 
-        choice = _get_choice(3)
+        choice = MenuOption(_get_choice(len(MenuOption)))
 
-        if choice == 1:
+        if choice == MenuOption.NEW_GAME:
             _show_intro()
             state = GameState()
             run_game(
@@ -89,7 +97,7 @@ def _main_menu() -> None:
             )
             delete_save()
 
-        elif choice == 2:
+        elif choice == MenuOption.LOAD_GAME:
             state = load_game()
             if state is None:
                 print("\nNo saved game found.")
@@ -104,7 +112,7 @@ def _main_menu() -> None:
             )
             delete_save()
 
-        elif choice == 3:
+        elif choice == MenuOption.QUIT:
             print("\nSee you on the trail!\n")
             break
 

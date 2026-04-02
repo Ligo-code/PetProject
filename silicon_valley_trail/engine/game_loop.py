@@ -1,29 +1,40 @@
 """
-Core game loop for Silicon Valley Trail.
+Game loop (Controller) for Silicon Valley Trail.
 
 Responsibilities:
-- Present the current state to the player
-- Handle action selection
-- Trigger events after travel
-- Trigger overnight events after rest
-- Call tick_day() after every turn
-- Check win/lose after every turn
+- Handle player input
+- Orchestrate actions, events, and turn lifecycle
+- Inject external API data into GameState
+- Delegate all terminal output to renderer (View)
 
 Services (weather, HN) are called here and inject data into GameState.
 If a service fails, GameState retains its previous/default values — game continues.
 """
 
 import random
+from enum import IntEnum
 
 from ..models.game_state import GameState
 from ..models.location import LOCATIONS
-from ..models.team import TeamRole
 from ..engine.actions import (
     travel, rest, fix_bugs, marketing_push, knowledge_share, buy_supplies,
 )
 from ..engine.events import EventRegistry
+from ..engine import renderer
 
 OVERNIGHT_EVENT_CHANCE = 0.45   # 45% chance of an overnight event after rest
+
+
+class Action(IntEnum):
+    TRAVEL          = 1
+    REST            = 2
+    FIX_BUGS        = 3
+    MARKETING_PUSH  = 4
+    KNOWLEDGE_SHARE = 5
+    BUY_SUPPLIES    = 6
+    SAVE            = 7
+    QUIT            = 8
+
 
 registry = EventRegistry()
 
@@ -58,90 +69,6 @@ def _refresh_hn(state: GameState) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Event resolution
-# ---------------------------------------------------------------------------
-
-def _resolve_event(state: GameState, event) -> None:
-    """Present an event to the player and apply the chosen effect."""
-    print()
-    print("!" * 60)
-    print(f"  EVENT: {event.title}")
-    print("!" * 60)
-    if event.description:
-        print(f"\n{event.description}\n")
-
-    if event.is_automatic:
-        msg = event.auto_effect(state)
-        print(msg)
-        return
-
-    choices = event.available_choices(state)
-    if not choices:
-        return
-
-    for i, choice in enumerate(choices, 1):
-        print(f"{i}. {choice.text}")
-
-    choice = _get_choice(len(choices))
-    msg = choices[choice - 1].effect(state)
-    print(f"\n{msg}")
-
-
-def _maybe_trigger_overnight_event(state: GameState) -> None:
-    """After rest, roll for an overnight event."""
-    if random.random() < OVERNIGHT_EVENT_CHANCE:
-        event = registry.pick_overnight(state)
-        if event:
-            _resolve_event(state, event)
-
-
-# ---------------------------------------------------------------------------
-# Display
-# ---------------------------------------------------------------------------
-
-def _display_status(state: GameState) -> None:
-    loc = state.current_location
-    active_names = ", ".join(m.name for m in state.active_team)
-
-    print()
-    print("=" * 60)
-    print(f"Day {state.day} | {loc.name}")
-    print(loc.description)
-    print("=" * 60)
-    print(f"Cash: ${state.cash:,}  |  Morale: {state.morale}/100  |  Coffee: {state.coffee}")
-    print(f"Hype: {state.hype}/100  |  Bugs: {state.bugs}")
-    print(f"Progress: {state.progress_percent}% to San Francisco")
-    print("=" * 60)
-    print(f"Weather: {state.weather_description}")
-    if state.hn_trending_keyword:
-        print(f"HN Trending: \"{state.hn_trending_keyword}\"  ->  +hype opportunity")
-    if state.coffee == 0 and state.days_without_coffee == 1:
-        print("WARNING: Day 2 without coffee means game over!")
-    elif state.coffee == 0:
-        print("WARNING: No coffee left!")
-    if state.next_fix_bugs_boosted:
-        print("Bug fix boost: ACTIVE (next fix will be 2x effective)")
-    print(f"Team: {active_names}")
-    print("-" * 60)
-
-
-def _display_actions(state: GameState) -> None:
-    print("\nWhat will you do?")
-    print("-" * 60)
-    print("1. Travel to next location")
-    print("2. Rest and recover")
-    print("3. Fix bugs")
-    print("4. Marketing push")
-    if state.has_role_active(TeamRole.PRODUCT):
-        print("5. Knowledge share (Leo)")
-    else:
-        print("5. Knowledge share (Leo unavailable)")
-    print("6. Buy supplies ($3,000)")
-    print("7. Save game")
-    print("8. Quit to menu")
-
-
-# ---------------------------------------------------------------------------
 # Input helpers
 # ---------------------------------------------------------------------------
 
@@ -165,36 +92,33 @@ def _press_enter() -> None:
 
 
 # ---------------------------------------------------------------------------
-# Win / Lose screens
+# Event resolution
 # ---------------------------------------------------------------------------
 
-def _show_win(state: GameState) -> None:
-    print()
-    print("=" * 60)
-    print("CONGRATULATIONS!")
-    print("=" * 60)
-    print(f"You reached San Francisco in {state.day} days!")
-    print("Series A pitch: SUCCESS")
-    print()
-    print(f"Final stats:")
-    print(f"  Cash:   ${state.cash:,}")
-    print(f"  Morale: {state.morale}/100")
-    print(f"  Hype:   {state.hype}/100")
-    print(f"  Bugs:   {state.bugs}")
-    print(f"  Hackathon won: {'Yes!' if state.hackathon_won else 'No'}")
-    active = [m.name for m in state.active_team]
-    print(f"  Team at finish: {', '.join(active)}")
-    print("=" * 60)
+def _resolve_event(state: GameState, event) -> None:
+    """Apply event logic: delegate display to renderer, handle input and effects here."""
+    if event.is_automatic:
+        renderer.show_event(event, [])
+        msg = event.auto_effect(state)
+        renderer.show_message(msg)
+        return
+
+    choices = event.available_choices(state)
+    if not choices:
+        return
+
+    renderer.show_event(event, choices)
+    choice = _get_choice(len(choices))
+    msg = choices[choice - 1].effect(state)
+    renderer.show_message(msg)
 
 
-def _show_lose(state: GameState) -> None:
-    print()
-    print("=" * 60)
-    print("GAME OVER")
-    print("=" * 60)
-    print(state.lose_reason)
-    print(f"You made it to: {state.current_location.name} (Day {state.day})")
-    print("=" * 60)
+def _maybe_trigger_overnight_event(state: GameState) -> None:
+    """After rest, roll for an overnight event."""
+    if random.random() < OVERNIGHT_EVENT_CHANCE:
+        event = registry.pick_overnight(state)
+        if event:
+            _resolve_event(state, event)
 
 
 # ---------------------------------------------------------------------------
@@ -214,18 +138,18 @@ def run_game(state: GameState, save_callback, quit_callback) -> None:
 
     while not state.game_over:
         _refresh_weather(state)
-        _display_status(state)
-        _display_actions(state)
+        renderer.display_status(state)
+        renderer.display_actions(state)
 
-        choice = _get_choice(8)
+        choice = Action(_get_choice(len(Action)))
 
-        if choice == 1:
+        if choice == Action.TRAVEL:
             if state.current_location_index == len(LOCATIONS) - 1:
-                print("You're already in San Francisco!")
+                renderer.show_message("You're already in San Francisco!")
                 _press_enter()
                 continue
             msg = travel(state)
-            print(f"\n{msg}")
+            renderer.show_message(msg)
             # Trigger a location event after arriving — fallback ensures one always fires
             event = registry.pick_from_pool(state.current_location.event_pool, state)
             if not event:
@@ -233,45 +157,45 @@ def run_game(state: GameState, save_callback, quit_callback) -> None:
             if event:
                 _resolve_event(state, event)
 
-        elif choice == 2:
+        elif choice == Action.REST:
             msg = rest(state)
-            print(f"\n{msg}")
+            renderer.show_message(msg)
             _maybe_trigger_overnight_event(state)
 
-        elif choice == 3:
+        elif choice == Action.FIX_BUGS:
             msg = fix_bugs(state)
-            print(f"\n{msg}")
+            renderer.show_message(msg)
 
-        elif choice == 4:
+        elif choice == Action.MARKETING_PUSH:
             msg = marketing_push(state)
-            print(f"\n{msg}")
+            renderer.show_message(msg)
 
-        elif choice == 5:
+        elif choice == Action.KNOWLEDGE_SHARE:
             msg = knowledge_share(state)
-            print(f"\n{msg}")
+            renderer.show_message(msg)
 
-        elif choice == 6:
+        elif choice == Action.BUY_SUPPLIES:
             msg = buy_supplies(state)
-            print(f"\n{msg}")
+            renderer.show_message(msg)
 
-        elif choice == 7:
+        elif choice == Action.SAVE:
             save_callback(state)
-            print("\nGame saved!")
+            renderer.show_message("Game saved!")
             _press_enter()
             continue
 
-        elif choice == 8:
+        elif choice == Action.QUIT:
             quit_callback()
             return
 
         # End of turn
         state.tick_day()
-        print(f"\nDaily upkeep: -{state.DAILY_COFFEE_DRAIN} coffee.")
+        renderer.show_message(f"Daily upkeep: -{state.DAILY_COFFEE_DRAIN} coffee.")
         state.check_game_status()
         _press_enter()
 
     if state.won:
-        _show_win(state)
+        renderer.show_win(state)
     else:
-        _show_lose(state)
+        renderer.show_lose(state)
     _press_enter()
