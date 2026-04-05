@@ -21,7 +21,7 @@ from ..engine.actions import (
 )
 from ..engine.events import EventRegistry
 from ..engine import renderer
-from ..leaderboard import save_score
+from ..leaderboard import save_score, ScoreEntry
 
 OVERNIGHT_EVENT_CHANCE = 0.45   # 45% chance of an overnight event after rest
 
@@ -114,6 +114,17 @@ def _resolve_event(state: GameState, event) -> None:
     renderer.show_message(msg)
 
 
+def _build_score_entry(state: GameState) -> ScoreEntry:
+    """Build a leaderboard entry from the completed game state."""
+    return ScoreEntry(
+        name=state.player_name,
+        score=state.calc_score(),
+        won=state.won,
+        day=state.day,
+        hackathon_won=state.hackathon_won,
+    )
+
+
 def _maybe_trigger_overnight_event(state: GameState) -> None:
     """After rest, roll for an overnight event."""
     if random.random() < OVERNIGHT_EVENT_CHANCE:
@@ -195,7 +206,7 @@ def run_game(state: GameState, save_callback, quit_callback) -> None:
         state.check_game_status()
         _press_enter()
 
-    save_score(state)
+    save_score(_build_score_entry(state))
     if state.won:
         renderer.show_win(state)
     else:
