@@ -89,7 +89,8 @@ def _main_menu() -> None:
 
         if choice == MenuOption.NEW_GAME:
             _show_intro()
-            state = GameState()
+            name = input("Enter your name for the leaderboard: ").strip() or "Anonymous"
+            state = GameState(player_name=name)
             run_game(
                 state,
                 save_callback=save_game,

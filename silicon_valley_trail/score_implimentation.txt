@@ -1,0 +1,105 @@
+Feature: Scoring & Leaderboard System
+
+1. Overview
+
+At the start of a new game, the player enters a name, which is stored in the game state.
+When the run ends, the system calculates a final score based on player performance and stores it in a leaderboard.
+The leaderboard displays scores in descending order.
+
+2. Score Calculation
+
+The final score is computed from the game state using the following formula:
+
+score = 0
+score += morale * 10
+score -= bugs * 15
+score += cash // 10
+score += 100 if won else 0
+score += 50 if hackathon_won else 0
+
+Notes:
+Morale increases score (positive performance)
+Bugs reduce score (penalty for instability)
+Cash reflects resource efficiency
+Winning the game gives a significant bonus
+Hackathon provides additional bonus points
+
+3. Data Model
+
+Each completed run is stored as a leaderboard entry:
+
+{
+  "name": "PlayerName",
+  "score": 245,
+  "won": true,
+  "day": 12,
+  "hackathon_won": true
+}
+
+4. Storage
+
+Scores are stored in persistent storage (e.g., leaderboard.json)
+Each completed game appends a new entry
+Existing scores are loaded and sorted in descending order
+
+5. Leaderboard
+
+The system:
+
+Retrieves all stored scores
+Sorts them in descending order
+Displays them to the user
+6. User Flow
+Player starts a new game
+System prompts for player name
+Name is saved in GameState
+Game runs normally
+At game end:
+Score is calculated
+Score is saved to storage
+Leaderboard is displayed
+A performance message is shown
+
+7. Output
+
+At the end of the game, the system displays:
+
+Final score
+Performance message (based on score range)
+Leaderboard
+
+Example:
+
+Final Score: 245
+Message: Strong finish — you built a solid startup.
+
+Top Players:
+1. Kay — 300
+2. Hanna — 245
+3. Leo — 180
+
+8. Design Decisions
+
+Score is calculated only at the end of the game, not accumulated during gameplay
+This avoids inconsistencies and keeps the logic simple and testable
+Leaderboard is stored separately from save-game data
+
+9. Future Improvements (Optional)
+
+Real-time score display during gameplay
+More advanced scoring (e.g., time efficiency, risk-taking)
+Online leaderboard
+
+Implemented:
+
+  - calc_score() — updated to match the formula from the design document                                                                          
+  - score field removed from GameState, player_name added instead                                                                                 
+  - leaderboard.py — handles save, load, formatting, and performance messages                                                                     
+  - renderer.py — displays final score and leaderboard after win/lose                                                                             
+  - game_loop.py — calls save_score() before showing the end screen                                                                               
+  - cli.py — prompts for player name before starting a new game  
+
+
+  Leaderboard is a separate persistence layer. Renderer only consumes formatted data, it doesn’t know where it comes from.
+
+  

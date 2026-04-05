@@ -21,6 +21,7 @@ from ..engine.actions import (
 )
 from ..engine.events import EventRegistry
 from ..engine import renderer
+from ..leaderboard import save_score
 
 OVERNIGHT_EVENT_CHANCE = 0.45   # 45% chance of an overnight event after rest
 
@@ -194,6 +195,7 @@ def run_game(state: GameState, save_callback, quit_callback) -> None:
         state.check_game_status()
         _press_enter()
 
+    save_score(state)
     if state.won:
         renderer.show_win(state)
     else:

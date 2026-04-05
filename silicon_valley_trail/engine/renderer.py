@@ -11,6 +11,7 @@ Renderer decides HOW to show it.
 
 from ..models.game_state import GameState
 from ..models.team import TeamRole
+from ..leaderboard import get_performance_message, format_leaderboard, load_scores
 
 DISPLAY_WIDTH = 60
 
@@ -74,6 +75,17 @@ def show_message(text: str) -> None:
     print(f"\n{text}")
 
 
+def _show_score_and_leaderboard(state: GameState) -> None:
+    """Shared end-of-game score display and leaderboard."""
+    score = state.calc_score()
+    print(f"\nFinal Score: {score}")
+    print(get_performance_message(score))
+    print()
+    print("Top Players:")
+    print(format_leaderboard(load_scores()))
+    print("=" * DISPLAY_WIDTH)
+
+
 def show_win(state: GameState) -> None:
     print()
     print("=" * DISPLAY_WIDTH)
@@ -82,7 +94,7 @@ def show_win(state: GameState) -> None:
     print(f"You reached San Francisco in {state.day} days!")
     print("Series A pitch: SUCCESS")
     print()
-    print(f"Final stats:")
+    print("Final stats:")
     print(f"  Cash:   ${state.cash:,}")
     print(f"  Morale: {state.morale}/100")
     print(f"  Hype:   {state.hype}/100")
@@ -90,7 +102,7 @@ def show_win(state: GameState) -> None:
     print(f"  Hackathon won: {'Yes!' if state.hackathon_won else 'No'}")
     active = [m.name for m in state.active_team]
     print(f"  Team at finish: {', '.join(active)}")
-    print("=" * DISPLAY_WIDTH)
+    _show_score_and_leaderboard(state)
 
 
 def show_lose(state: GameState) -> None:
@@ -100,6 +112,6 @@ def show_lose(state: GameState) -> None:
     print("=" * DISPLAY_WIDTH)
     print(state.lose_reason)
     print(f"You made it to: {state.current_location.name} (Day {state.day})")
-    print("=" * DISPLAY_WIDTH)
+    _show_score_and_leaderboard(state)
 
 

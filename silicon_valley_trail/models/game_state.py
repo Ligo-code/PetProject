@@ -12,7 +12,9 @@ class GameState:
     coffee: int = 50
     hype: int = 50
     bugs: int = 0
-    score: int = 0
+
+    # Player identity
+    player_name: str = "Anonymous"
 
     # Progress
     day: int = 1
@@ -68,7 +70,6 @@ class GameState:
         coffee: int = 0,
         hype: int = 0,
         bugs: int = 0,
-        game_score: int = 0,
     ) -> dict[str, int]:
         """
         Apply resource changes, clamp, and return actual deltas.
@@ -81,21 +82,22 @@ class GameState:
         self.coffee += coffee
         self.hype += hype
         self.bugs += bugs
-        self.score += game_score 
         self._clamp_stats()
         return {f: getattr(self, f) - before[f] for f in self.RESOURCE_FIELDS}
-    
+
     def calc_score(self) -> int:
-        """Calculate a score for the current state. Higher is better."""
+        """
+        Calculate final score at end of game.
+        Called once — not accumulated during gameplay.
+        """
         score = 0
-        score += self.cash // 1000          # every $1k is 1 point
-        score += self.morale                # morale directly adds to score
-        score += self.coffee // 5           # every 5 coffee is 1 point
-        score += self.hype // 10            # every 10 hype is 1 point
-        score -= self.bugs * 5              # every bug subtracts 5 points
-        score += self.progress_percent // 10 # every 10% progress is 1 point
-        return max(0, score)                # score can't be negative
-    
+        score += self.morale * 10           # morale reflects team health
+        score -= self.bugs * 15             # bugs penalise instability
+        score += self.cash // 10            # cash reflects resource efficiency
+        score += 100 if self.won else 0     # winning bonus
+        score += 50 if self.hackathon_won else 0  # hackathon bonus
+        return max(0, score)
+
 
 
 

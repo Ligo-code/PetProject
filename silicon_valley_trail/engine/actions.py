@@ -80,7 +80,7 @@ def rest(state: GameState) -> str:
     if state.has_role_active(TeamRole.PRODUCT):
         morale_gain += REST_PRODUCT_MORALE_BONUS
 
-    deltas = state.apply_effects(morale=morale_gain, coffee=-REST_COFFEE_COST, game_score=morale_gain)
+    deltas = state.apply_effects(morale=morale_gain, coffee=-REST_COFFEE_COST)
     return f"The team rests. {fmt(deltas)}."
 
 
