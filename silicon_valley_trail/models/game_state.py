@@ -12,6 +12,7 @@ class GameState:
     coffee: int = 50
     hype: int = 50
     bugs: int = 0
+    score: int = 0
 
     # Progress
     day: int = 1
@@ -67,6 +68,7 @@ class GameState:
         coffee: int = 0,
         hype: int = 0,
         bugs: int = 0,
+        game_score: int = 0,
     ) -> dict[str, int]:
         """
         Apply resource changes, clamp, and return actual deltas.
@@ -79,8 +81,23 @@ class GameState:
         self.coffee += coffee
         self.hype += hype
         self.bugs += bugs
+        self.score += game_score 
         self._clamp_stats()
         return {f: getattr(self, f) - before[f] for f in self.RESOURCE_FIELDS}
+    
+    def calc_score(self) -> int:
+        """Calculate a score for the current state. Higher is better."""
+        score = 0
+        score += self.cash // 1000          # every $1k is 1 point
+        score += self.morale                # morale directly adds to score
+        score += self.coffee // 5           # every 5 coffee is 1 point
+        score += self.hype // 10            # every 10 hype is 1 point
+        score -= self.bugs * 5              # every bug subtracts 5 points
+        score += self.progress_percent // 10 # every 10% progress is 1 point
+        return max(0, score)                # score can't be negative
+    
+
+
 
     @staticmethod
     def format_deltas(deltas: dict[str, int]) -> str:
@@ -122,9 +139,12 @@ class GameState:
 
     # --- Turn lifecycle ---
 
-    DAILY_COFFEE_DRAIN = 1      # passive coffee consumption per day
-    BUG_GROWTH_INTERVAL = 3    # bugs grow by 1 every N days if not fixed
-    LOW_COFFEE_THRESHOLD = 15  # below this, team morale starts to slip
+    DAILY_COFFEE_DRAIN = 1       # passive coffee consumption per day
+    BUG_GROWTH_INTERVAL = 3     # bugs grow by 1 every N days if not fixed
+    LOW_COFFEE_THRESHOLD = 15   # below this, team morale starts to slip
+    LOW_COFFEE_MORALE_DRAIN = 1 # morale lost per day when coffee is low
+    MAX_DAYS_WITHOUT_COFFEE = 2 # days without coffee before game over
+    MAX_BUGS = 20               # bug count that triggers game over
 
     def tick_day(self) -> None:
         """Advance one day. Call AFTER showing the player any messages."""
@@ -144,7 +164,7 @@ class GameState:
 
         # Low coffee drains morale — team is running on fumes
         if self.coffee < self.LOW_COFFEE_THRESHOLD:
-            self.morale = max(0, self.morale - 1)
+            self.morale = max(0, self.morale - self.LOW_COFFEE_MORALE_DRAIN)
 
         self._tick_inactive_members()
 
@@ -163,7 +183,7 @@ class GameState:
             self.game_over = True
             self.lose_reason = "No one is left to keep the startup alive."
             return True
-        if self.days_without_coffee >= 2:
+        if self.days_without_coffee >= self.MAX_DAYS_WITHOUT_COFFEE:
             self.game_over = True
             self.lose_reason = "Two days without coffee. The team could not keep going."
             return True
@@ -175,7 +195,7 @@ class GameState:
             self.game_over = True
             self.lose_reason = "You ran out of cash. The startup shut down."
             return True
-        if self.bugs >= 20:
+        if self.bugs >= self.MAX_BUGS:
             self.game_over = True
             self.lose_reason = f"The codebase became unrecoverable ({self.bugs} bugs). Investors lost confidence."
             return True

@@ -12,20 +12,22 @@ Renderer decides HOW to show it.
 from ..models.game_state import GameState
 from ..models.team import TeamRole
 
+DISPLAY_WIDTH = 60
+
 
 def display_status(state: GameState) -> None:
     loc = state.current_location
     active_names = ", ".join(m.name for m in state.active_team)
 
     print()
-    print("=" * 60)
+    print("=" * DISPLAY_WIDTH)
     print(f"Day {state.day} | {loc.name}")
     print(loc.description)
-    print("=" * 60)
+    print("=" * DISPLAY_WIDTH)
     print(f"Cash: ${state.cash:,}  |  Morale: {state.morale}/100  |  Coffee: {state.coffee}")
     print(f"Hype: {state.hype}/100  |  Bugs: {state.bugs}")
     print(f"Progress: {state.progress_percent}% to San Francisco")
-    print("=" * 60)
+    print("=" * DISPLAY_WIDTH)
     print(f"Weather: {state.weather_description}")
     if state.hn_trending_keyword:
         print(f"HN Trending: \"{state.hn_trending_keyword}\"  ->  +hype opportunity")
@@ -36,12 +38,13 @@ def display_status(state: GameState) -> None:
     if state.next_fix_bugs_boosted:
         print("Bug fix boost: ACTIVE (next fix will be 2x effective)")
     print(f"Team: {active_names}")
-    print("-" * 60)
+    print("-" * DISPLAY_WIDTH)
+    print(f"Score: {state.calc_score()}")
 
 
 def display_actions(state: GameState) -> None:
     print("\nWhat will you do?")
-    print("-" * 60)
+    print("-" * DISPLAY_WIDTH)
     print("1. Travel to next location")
     print("2. Rest and recover")
     print("3. Fix bugs")
@@ -58,9 +61,9 @@ def display_actions(state: GameState) -> None:
 def show_event(event, choices: list) -> None:
     """Render event header, description, and available choices."""
     print()
-    print("!" * 60)
+    print("!" * DISPLAY_WIDTH)
     print(f"  EVENT: {event.title}")
-    print("!" * 60)
+    print("!" * DISPLAY_WIDTH)
     if event.description:
         print(f"\n{event.description}\n")
     for i, choice in enumerate(choices, 1):
@@ -73,9 +76,9 @@ def show_message(text: str) -> None:
 
 def show_win(state: GameState) -> None:
     print()
-    print("=" * 60)
+    print("=" * DISPLAY_WIDTH)
     print("CONGRATULATIONS!")
-    print("=" * 60)
+    print("=" * DISPLAY_WIDTH)
     print(f"You reached San Francisco in {state.day} days!")
     print("Series A pitch: SUCCESS")
     print()
@@ -87,14 +90,16 @@ def show_win(state: GameState) -> None:
     print(f"  Hackathon won: {'Yes!' if state.hackathon_won else 'No'}")
     active = [m.name for m in state.active_team]
     print(f"  Team at finish: {', '.join(active)}")
-    print("=" * 60)
+    print("=" * DISPLAY_WIDTH)
 
 
 def show_lose(state: GameState) -> None:
     print()
-    print("=" * 60)
+    print("=" * DISPLAY_WIDTH)
     print("GAME OVER")
-    print("=" * 60)
+    print("=" * DISPLAY_WIDTH)
     print(state.lose_reason)
     print(f"You made it to: {state.current_location.name} (Day {state.day})")
-    print("=" * 60)
+    print("=" * DISPLAY_WIDTH)
+
+

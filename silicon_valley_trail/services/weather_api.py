@@ -5,6 +5,7 @@ No API key required.
 
 import os
 from dataclasses import dataclass
+from enum import Enum
 
 import requests
 
@@ -22,7 +23,6 @@ class WeatherData:
     is_rainy: bool
     is_hot: bool
 
-
 _MOCK_WEATHER = WeatherData(
     description="Partly cloudy, 18°C",
     temperature=18.0,
@@ -30,34 +30,60 @@ _MOCK_WEATHER = WeatherData(
     is_hot=False,
 )
 
+class WeatherCode(Enum):
+    """
+    Maps WMO weather codes to gameplay-relevant data.
+    Each member bundles a display description and an is_rainy flag together,
+    so adding a new weather type only requires one line here — not changes
+    across multiple functions.
+    """
+    CLEAR        = ("Clear sky",     False)
+    PARTLY_CLOUDY = ("Partly cloudy", False)
+    FOG          = ("Foggy",         False)
+    RAIN         = ("Rainy",         True)
+    SNOW         = ("Snowy",         True)   # treated as rainy for gameplay
+    SHOWERS      = ("Showers",       True)
+    THUNDERSTORM = ("Thunderstorm",  True)
+
+    def __init__(self, description: str, is_rainy: bool):
+        self.description = description
+        self.is_rainy = is_rainy
+
 
 def _parse_weather_code(code: int) -> tuple[str, bool]:
     """
-    Translate a WMO weather code (returned by Open-Meteo API) into a
-    human-readable description and an is_rainy flag.
+    Translate a WMO weather code into a WeatherCode enum member,
+    then return its description and is_rainy flag.
+
+    Returning enum attributes instead of raw strings keeps description
+    and is_rainy coupled at the source — WeatherCode owns both values.
 
     WMO code ranges:
       0        — Clear sky
       1–3      — Partly cloudy
       45–48    — Fog
       51–67    — Drizzle / Rain      → is_rainy = True
-      71–77    — Snow                → is_rainy = True (treated as rain for gameplay)
+      71–77    — Snow                → is_rainy = True
       80–82    — Showers             → is_rainy = True
       95–99    — Thunderstorm        → is_rainy = True
     """
     if code == 0:
-        return "Clear sky", False
-    if code <= 3:
-        return "Partly cloudy", False
-    if code <= 48:
-        return "Foggy", False
-    if code <= 67:
-        return "Rainy", True
-    if code <= 77:
-        return "Snowy", True
-    if code <= 82:
-        return "Showers", True
-    return "Thunderstorm", True
+        weather = WeatherCode.CLEAR
+    elif code <= 3:
+        weather = WeatherCode.PARTLY_CLOUDY
+    elif code <= 48:
+        weather = WeatherCode.FOG
+    elif code <= 67:
+        weather = WeatherCode.RAIN
+    elif code <= 77:
+        weather = WeatherCode.SNOW
+    elif code <= 82:
+        weather = WeatherCode.SHOWERS
+    else:
+        # covers 83–99 (thunderstorm) and any unknown future codes
+        weather = WeatherCode.THUNDERSTORM
+
+    return weather.description, weather.is_rainy
 
 
 def get_weather(lat: float, lon: float) -> WeatherData:

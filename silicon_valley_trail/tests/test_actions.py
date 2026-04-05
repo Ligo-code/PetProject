@@ -8,11 +8,16 @@ import pytest
 from silicon_valley_trail.models.game_state import GameState
 from silicon_valley_trail.models.team import TeamRole
 from silicon_valley_trail.engine.actions import (
+    travel,
     fix_bugs,
     marketing_push,
     knowledge_share,
     buy_supplies,
     rest,
+    TRAVEL_COFFEE_COST,
+    TRAVEL_RAIN_COFFEE_PENALTY,
+    TRAVEL_RAIN_MORALE_PENALTY,
+    TRAVEL_HEAT_BUG_PENALTY,
     FIX_BUGS_BASE,
     FIX_BUGS_BACKEND_BONUS,
     FIX_BUGS_COFFEE_COST,
@@ -36,6 +41,35 @@ def deactivate_role(state: GameState, role: TeamRole) -> None:
     for m in state.team:
         if m.role == role:
             m.is_active = False
+
+
+# ---------------------------------------------------------------------------
+# travel
+# ---------------------------------------------------------------------------
+
+class TestTravel:
+    def test_base_coffee_cost(self):
+        state = make_state(coffee=20)
+        travel(state)
+        assert state.coffee == 20 - TRAVEL_COFFEE_COST
+
+    def test_rain_adds_coffee_cost_and_morale_penalty(self):
+        state = make_state(coffee=20, morale=80, weather_is_rainy=True)
+        travel(state)
+        assert state.coffee == 20 - TRAVEL_COFFEE_COST - abs(TRAVEL_RAIN_COFFEE_PENALTY)
+        assert state.morale == 80 + TRAVEL_RAIN_MORALE_PENALTY
+
+    def test_heat_adds_bug(self):
+        state = make_state(coffee=20, bugs=0, weather_is_hot=True)
+        travel(state)
+        assert state.bugs == TRAVEL_HEAT_BUG_PENALTY
+
+    def test_clear_weather_no_penalties(self):
+        state = make_state(coffee=20, morale=80, bugs=0)
+        travel(state)
+        assert state.coffee == 20 - TRAVEL_COFFEE_COST
+        assert state.morale == 80
+        assert state.bugs == 0
 
 
 # ---------------------------------------------------------------------------

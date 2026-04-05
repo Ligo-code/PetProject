@@ -8,7 +8,14 @@ class TeamRole(str, Enum):
     PRODUCT = "product"
 
 
-BURNOUT_LEAVE_DAYS = 2      # days a member is on leave after burnout
+BURNOUT_LEAVE_DAYS = 2              # days a member is on leave after burnout
+PERMANENT_LEAVE = -1                # sentinel: member was poached and will never return
+
+PRODUCT_POACH_HYPE_THRESHOLD    = 70  # Leo gets poached above this hype level
+FRONTEND_BURNOUT_THRESHOLD      = 10  # Hanna burns out at or below this morale
+PRODUCT_BURNOUT_THRESHOLD       = 25  # Leo burns out at or below this morale
+FRONTEND_BURNOUT_RISK_THRESHOLD = 20  # Hanna is at risk at or below this morale
+PRODUCT_BURNOUT_RISK_THRESHOLD  = 30  # Leo is at risk at or below this morale
 
 
 @dataclass
@@ -31,15 +38,15 @@ class TeamMember:
         if self.role == TeamRole.FRONTEND:
             return True
         if self.role == TeamRole.PRODUCT:
-            return hype > 70
+            return hype > PRODUCT_POACH_HYPE_THRESHOLD
         return False
 
     def should_burnout(self) -> bool:
         if self.role == TeamRole.BACKEND:
             return False
         if self.role == TeamRole.PRODUCT:
-            return self.morale <= 25
-        return self.morale <= 10
+            return self.morale <= PRODUCT_BURNOUT_THRESHOLD
+        return self.morale <= FRONTEND_BURNOUT_THRESHOLD
 
     def reduce_morale(self, amount: int) -> None:
         self.morale = max(0, self.morale - amount)
@@ -54,15 +61,15 @@ class TeamMember:
 
     def is_burnout_risk(self) -> bool:
         if self.role == TeamRole.PRODUCT:
-            return self.morale <= 30
+            return self.morale <= PRODUCT_BURNOUT_RISK_THRESHOLD
         if self.role == TeamRole.BACKEND:
             return False
-        return self.morale <= 20
+        return self.morale <= FRONTEND_BURNOUT_RISK_THRESHOLD
 
     @property
     def has_left_permanently(self) -> bool:
         """True if this member was poached and will never return."""
-        return not self.is_active and self.inactive_days_remaining == -1
+        return not self.is_active and self.inactive_days_remaining == PERMANENT_LEAVE
 
     def apply_inactive_day(self) -> None:
         if self.has_left_permanently:

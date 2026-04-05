@@ -12,13 +12,10 @@ Effect functions take GameState, mutate it in place, return a message string.
 import random
 
 from ..models.game_state import GameState
-from ..models.team import TeamRole, BURNOUT_LEAVE_DAYS
+from ..models.team import TeamRole, BURNOUT_LEAVE_DAYS, PERMANENT_LEAVE
 from ..models.event import Event, EventChoice
 
 fmt = GameState.format_deltas  # local shorthand
-
-# Sentinel: member left the team permanently (poached, not coming back)
-PERMANENT_LEAVE = -1
 
 
 # ---------------------------------------------------------------------------
@@ -37,13 +34,13 @@ def _poachable_member(state: GameState):
 
 def _vc_pitch_accept(state: GameState) -> str:
     entry_deltas = state.apply_effects(cash=-2_000, coffee=-10)
-    if state.hype < 40:
+    if state.hype < VC_PITCH_FAIL_HYPE_THRESHOLD:
         fail_deltas = state.apply_effects(morale=-10)
         return (
             f"The pitch fell flat. They weren't impressed. "
             f"Entry cost: {fmt(entry_deltas)}. {fmt(fail_deltas)}."
         )
-    if state.hype >= 60:
+    if state.hype >= VC_PITCH_WIN_HYPE_THRESHOLD:
         win_deltas = state.apply_effects(cash=10_000, hype=15)
         return f"Great pitch! They want a follow-up. {fmt(win_deltas)}. Entry cost: {fmt(entry_deltas)}."
     ok_deltas = state.apply_effects(cash=3_000, hype=5)
@@ -58,15 +55,19 @@ def _vc_pitch_decline(state: GameState) -> str:
 # Effect functions — hackathon
 # ---------------------------------------------------------------------------
 
-HACKATHON_WIN_CHANCE_BASE = 0.45
+HACKATHON_WIN_CHANCE_BASE         = 0.45
 HACKATHON_WIN_CHANCE_WITH_PRODUCT = 0.75  # Leo significantly improves odds
+HACKATHON_MORALE_THRESHOLD        = 50    # morale needed for Leo's win bonus
+VC_PITCH_FAIL_HYPE_THRESHOLD      = 40    # below this, pitch fails
+VC_PITCH_WIN_HYPE_THRESHOLD       = 60    # at or above this, pitch succeeds
+TECH_DEBT_BUG_THRESHOLD           = 10    # bug count that triggers tech debt crisis
 
 
 def _hackathon_enter(state: GameState) -> str:
     entry_deltas = state.apply_effects(coffee=-15, morale=-10)
     win_chance = (
         HACKATHON_WIN_CHANCE_WITH_PRODUCT
-        if state.has_role_active(TeamRole.PRODUCT) and state.morale >= 50
+        if state.has_role_active(TeamRole.PRODUCT) and state.morale >= HACKATHON_MORALE_THRESHOLD
         else HACKATHON_WIN_CHANCE_BASE
     )
     if random.random() < win_chance:
@@ -470,7 +471,7 @@ class EventRegistry:
             description="The shortcuts from last sprint are catching up with you.",
             choices=[],
             weight=8,
-            condition=lambda s: s.bugs >= 10,
+            condition=lambda s: s.bugs >= TECH_DEBT_BUG_THRESHOLD,
             auto_effect=_tech_debt_auto,
         ))
 
